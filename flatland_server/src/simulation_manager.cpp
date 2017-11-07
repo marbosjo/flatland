@@ -99,6 +99,7 @@ void SimulationManager::Main() {
   timekeeper.SetMaxStepSize(step_size_);
   ROS_INFO_NAMED("SimMan", "Simulation loop started");
 
+  ros::WallTime last_time = ros::WallTime::now();
   while (ros::ok() && run_simulator_) {
     // for updating visualization at a given rate
     // see flatland_plugins/update_timer.cpp for this formula
@@ -115,7 +116,7 @@ void SimulationManager::Main() {
     }
 
     ros::spinOnce();
-    rate.sleep();
+    //rate.sleep();
 
     iterations++;
 
@@ -127,10 +128,14 @@ void SimulationManager::Main() {
     if (iterations > 10) max_cycle_util = std::max(cycle_util, max_cycle_util);
     filtered_cycle_util = 0.99 * filtered_cycle_util + 0.01 * cycle_util;
 
-    ROS_INFO_THROTTLE_NAMED(
-        1, "SimMan",
-        "utilization: min %.1f%% max %.1f%% ave %.1f%%  factor: %.1f",
-        min_cycle_util, max_cycle_util, filtered_cycle_util, factor);
+    ros::WallTime now = ros::WallTime::now();
+    ros::WallDuration last_cycle = now - last_time;
+    last_time = now;
+    ROS_INFO_THROTTLE_NAMED(1, "SimMan",
+                            "utilization: min %.1f%% max %.1f%% ave %.1f%%  "
+                            "factor: %.1f cycle %.4f",
+                            min_cycle_util, max_cycle_util, filtered_cycle_util,
+                            factor, last_cycle.toSec());
   }
   ROS_INFO_NAMED("SimMan", "Simulation loop ended");
 
